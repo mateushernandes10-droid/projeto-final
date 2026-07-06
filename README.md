@@ -87,7 +87,7 @@ O mapa e criado por uma matriz de caracteres:
 - `C`: caixa
 - `B`: rocha/barreira
 - `P`: jogador
-- `H`: kit de vida
+- `H`: kit de reparo/vida
 - `1`, `2`, `3`, `4`: engrenagens
 - `V`: guarda com campo de visao
 - `A`: cacador com A*
@@ -103,7 +103,7 @@ Essas imagens foram copiadas dos recursos padrao da biblioteca Arcade:
 - tanques completos: `images/topdown_tanks`
 - ruas, grama e areia: `images/topdown_tanks`
 - caixas, muros, rochas, bombas e espinhos: `images/tiles`
-- vida: `images/items/gemGreen.png`
+- vida/reparo: `onscreen_controls/shaded_dark/wrench.png`
 - engrenagem: `onscreen_controls/shaded_dark/gear.png`
 - bandeira de extracao: `images/items/flagGreen2.png`
 

@@ -25,7 +25,7 @@ A funcao `criar_matriz_mapa` monta uma matriz de caracteres. Cada caractere repr
 - `M` vira muro com colisao;
 - `C` vira caixa com colisao;
 - `B` vira rocha/barreira com colisao;
-- `H` vira kit de vida;
+- `H` vira kit de reparo/vida;
 - `1`, `2`, `3`, `4` viram engrenagens;
 - `V`, `A`, `U` viram inimigos diferentes;
 - `E` vira area de extracao.
@@ -65,9 +65,9 @@ Exemplo de explicacao:
 
 > Se o jogador esta perto e o comandante tem vida, atacar fica mais forte. Se o comandante esta com pouca vida e existe kit perto, buscar vida pode vencer.
 
-## 7. Kits de vida compartilhados
+## 7. Kits de reparo compartilhados
 
-Os kits verdes podem ser usados pelo jogador e pelos inimigos. Se alguem encosta no kit com vida abaixo do maximo, recupera vida e o kit entra em respawn.
+Os kits com icone de chave de boca podem ser usados pelo jogador e pelos inimigos. Como todos sao tanques, a recuperacao de vida representa um reparo. Se alguem encosta no kit com vida abaixo do maximo, recupera vida e o kit entra em respawn.
 
 ## 8. Level Design
 

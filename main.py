@@ -79,7 +79,7 @@ TEXTURA_CAIXA = caminho_asset("images/tiles/boxCrate_double.png")
 TEXTURA_ROCHA = caminho_asset("images/tiles/rock.png")
 TEXTURA_BOMBA = caminho_asset("images/tiles/bomb.png")
 TEXTURA_SPIKES = caminho_asset("images/tiles/spikes.png")
-TEXTURA_VIDA = caminho_asset("images/items/gemGreen.png")
+TEXTURA_VIDA = caminho_asset("onscreen_controls/shaded_dark/wrench.png")
 TEXTURA_ENGRENAGEM = caminho_asset("onscreen_controls/shaded_dark/gear.png")
 TEXTURA_SAIDA = caminho_asset("images/items/flagGreen2.png")
 TEXTURA_MENU = caminho_asset("images/menu/tank_battle_menu.png")
@@ -541,8 +541,6 @@ class KitVida:
         if self.ativo:
             self.sprite.center_y = self.y + math.sin(self.pulso) * 2
             desenhar_sprite_solto(self.sprite)
-            arcade.draw_line(self.x - 12, self.y, self.x + 12, self.y, BRANCO, 4)
-            arcade.draw_line(self.x, self.y - 12, self.x, self.y + 12, BRANCO, 4)
         else:
             return
 
