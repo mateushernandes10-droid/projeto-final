@@ -1054,6 +1054,7 @@ class TelaFim(arcade.View):
         super().__init__()
         global MELHOR_PONTUACAO, MELHOR_TEMPO
 
+        self.textura_menu = arcade.load_texture(TEXTURA_MENU)
         self.venceu = venceu
         self.pecas = pecas
         self.pontuacao = pontuacao
@@ -1077,13 +1078,23 @@ class TelaFim(arcade.View):
         if MELHOR_TEMPO is not None:
             melhor = f"Melhor: {MELHOR_PONTUACAO} pts em {formatar_tempo(MELHOR_TEMPO)}"
 
-        arcade.draw_text(titulo, LARGURA_TELA / 2, 455, cor, 42, anchor_x="center")
-        arcade.draw_text(f"Pecas coletadas: {self.pecas}/{TOTAL_PECAS}", LARGURA_TELA / 2, 385, BRANCO, 22, anchor_x="center")
-        arcade.draw_text(f"Pontuacao: {self.pontuacao} pts", LARGURA_TELA / 2, 345, COR_PECA, 20, anchor_x="center")
-        arcade.draw_text(f"Tempo: {formatar_tempo(self.tempo_jogo)}", LARGURA_TELA / 2, 312, BRANCO, 18, anchor_x="center")
-        arcade.draw_text(melhor, LARGURA_TELA / 2, 275, CINZA, 16, anchor_x="center")
-        arcade.draw_text("ENTER - jogar novamente", LARGURA_TELA / 2, 220, COR_PECA, 20, anchor_x="center")
-        arcade.draw_text("ESC - voltar ao menu", LARGURA_TELA / 2, 180, CINZA, 16, anchor_x="center")
+        escala = max(LARGURA_TELA / self.textura_menu.width, ALTURA_TELA / self.textura_menu.height)
+        largura_fundo = self.textura_menu.width * escala
+        altura_fundo = self.textura_menu.height * escala
+        arcade.draw_texture_rect(
+            texture=self.textura_menu,
+            rect=retangulo_centralizado(LARGURA_TELA / 2, ALTURA_TELA / 2, largura_fundo, altura_fundo),
+        )
+        arcade.draw_lrbt_rectangle_filled(0, LARGURA_TELA, 0, ALTURA_TELA, (4, 7, 12, 95))
+        arcade.draw_lrbt_rectangle_filled(0, 650, 0, ALTURA_TELA, (4, 7, 12, 165))
+
+        arcade.draw_text(titulo, 62, 505, cor, 40, anchor_x="left")
+        arcade.draw_text(f"Pecas coletadas: {self.pecas}/{TOTAL_PECAS}", 64, 425, BRANCO, 22, anchor_x="left")
+        arcade.draw_text(f"Pontuacao: {self.pontuacao} pts", 64, 382, COR_PECA, 21, anchor_x="left")
+        arcade.draw_text(f"Tempo: {formatar_tempo(self.tempo_jogo)}", 64, 342, BRANCO, 19, anchor_x="left")
+        arcade.draw_text(melhor, 64, 300, CINZA, 16, anchor_x="left")
+        arcade.draw_text("ENTER - jogar novamente", 64, 212, COR_PECA, 21, anchor_x="left")
+        arcade.draw_text("ESC - voltar ao menu", 64, 174, CINZA, 16, anchor_x="left")
 
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key == arcade.key.ENTER:
