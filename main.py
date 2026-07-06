@@ -997,6 +997,10 @@ class TelaMenu(arcade.View):
     def __init__(self) -> None:
         super().__init__()
         self.textura_menu = arcade.load_texture(TEXTURA_MENU)
+        self.textura_engrenagem = arcade.load_texture(TEXTURA_ENGRENAGEM)
+        self.textura_ferramenta = arcade.load_texture(TEXTURA_VIDA)
+        self.textura_bomba = arcade.load_texture(TEXTURA_BOMBA)
+        self.textura_espinho = arcade.load_texture(TEXTURA_SPIKES)
 
     def on_show_view(self) -> None:
         arcade.set_background_color(COR_FUNDO)
@@ -1042,6 +1046,38 @@ class TelaMenu(arcade.View):
         ]
         for indice, texto in enumerate(textos_ia):
             arcade.draw_text(texto, 62, 132 - indice * 24, CINZA, 14, anchor_x="left")
+
+        self.desenhar_legenda_itens()
+
+    def desenhar_icone_menu(self, textura: arcade.Texture, x: float, y: float, tamanho: float) -> None:
+        arcade.draw_texture_rect(
+            texture=textura,
+            rect=retangulo_centralizado(x, y, tamanho, tamanho),
+        )
+
+    def desenhar_legenda_itens(self) -> None:
+        esquerda = 720
+        direita = 1155
+        baixo = 38
+        cima = 230
+
+        arcade.draw_lrbt_rectangle_filled(esquerda, direita, baixo, cima, (4, 7, 12, 158))
+        arcade.draw_lrbt_rectangle_outline(esquerda, direita, baixo, cima, (238, 242, 250, 92), 2)
+        arcade.draw_text("Itens do mapa", esquerda + 24, cima - 34, BRANCO, 17, anchor_x="left")
+
+        linhas = [
+            (self.textura_engrenagem, "Engrenagem: peças coletáveis"),
+            (self.textura_ferramenta, "Ferramenta: repara o tanque"),
+        ]
+        for indice, (textura, texto) in enumerate(linhas):
+            y = cima - 76 - indice * 46
+            self.desenhar_icone_menu(textura, esquerda + 38, y + 4, 36)
+            arcade.draw_text(texto, esquerda + 82, y - 6, BRANCO, 14, anchor_x="left")
+
+        y_perigo = cima - 168
+        self.desenhar_icone_menu(self.textura_bomba, esquerda + 28, y_perigo + 4, 30)
+        self.desenhar_icone_menu(self.textura_espinho, esquerda + 72, y_perigo + 4, 30)
+        arcade.draw_text("Bomba e espinho: danificam o tanque", esquerda + 116, y_perigo - 6, BRANCO, 14, anchor_x="left")
 
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key == arcade.key.ENTER:
