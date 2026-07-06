@@ -48,7 +48,7 @@ A terceira condicao e a parte de raycasting/linha de visao. O codigo amostra pon
 
 O cacador escuro usa A* para perseguir o jogador. Ele transforma a posicao do jogador e do inimigo em celulas da matriz, calcula o caminho ate o alvo e segue o proximo ponto.
 
-Durante o jogo, o caminho aparece desenhado com pontos e linhas azuis. Isso ajuda a demonstrar que o inimigo nao esta atravessando obstaculos; ele esta contornando o mapa.
+Para apresentar visualmente, da para ligar a constante `MOSTRAR_DEBUG_IA` no codigo. Com ela ligada, o caminho aparece desenhado com pontos e linhas azuis. Isso ajuda a demonstrar que o inimigo nao esta atravessando obstaculos; ele esta contornando o mapa.
 
 ## 6. IA 3 - Utility AI
 

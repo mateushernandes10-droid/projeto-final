@@ -51,6 +51,7 @@ DISTANCIA_ATIVAR_ASTAR = 850
 TOTAL_PECAS = 4
 MELHOR_PONTUACAO = 0
 MELHOR_TEMPO: Optional[float] = None
+MOSTRAR_DEBUG_IA = False
 
 
 # Assets usados pelo jogo. Eles ficam dentro da pasta do projeto para facilitar a entrega em .zip.
@@ -81,6 +82,7 @@ TEXTURA_SPIKES = caminho_asset("images/tiles/spikes.png")
 TEXTURA_VIDA = caminho_asset("images/items/gemGreen.png")
 TEXTURA_ENGRENAGEM = caminho_asset("onscreen_controls/shaded_dark/gear.png")
 TEXTURA_SAIDA = caminho_asset("images/items/flagGreen2.png")
+TEXTURA_MENU = caminho_asset("images/menu/tank_battle_menu.png")
 
 COR_FUNDO = (12, 16, 24)
 COR_HUD = (16, 22, 32)
@@ -167,28 +169,6 @@ def criar_sprite_item(textura: arcade.Texture, x: float, y: float, tamanho: int)
     return sprite
 
 
-def desenhar_contorno_sprite(sprite: arcade.Sprite, espessura: int = 2) -> None:
-    """Desenha a propria textura em preto por baixo, criando um contorno discreto."""
-    deslocamentos = (
-        (-espessura, 0),
-        (espessura, 0),
-        (0, -espessura),
-        (0, espessura),
-        (-espessura, -espessura),
-        (-espessura, espessura),
-        (espessura, -espessura),
-        (espessura, espessura),
-    )
-
-    for dx, dy in deslocamentos:
-        arcade.draw_texture_rect(
-            texture=sprite.texture,
-            rect=retangulo_centralizado(sprite.center_x + dx, sprite.center_y + dy, sprite.width, sprite.height),
-            color=arcade.types.Color(12, 14, 18, 225),
-            angle=sprite.angle,
-        )
-
-
 def desenhar_sprite_solto(sprite: arcade.Sprite) -> None:
     """Desenha um Sprite que nao esta dentro de uma SpriteList."""
     arcade.draw_texture_rect(
@@ -198,23 +178,18 @@ def desenhar_sprite_solto(sprite: arcade.Sprite) -> None:
     )
 
 
-def desenhar_icone_engrenagem(x: float, y: float, angulo_base: float) -> None:
-    """Desenha uma engrenagem simples para o item ficar visivel mesmo sem depender da textura."""
-    arcade.draw_circle_filled(x, y, 36, (255, 218, 88, 230))
-    arcade.draw_circle_filled(x, y, 29, (35, 39, 46, 245))
-
-    for indice in range(8):
-        angulo = math.radians(angulo_base + indice * 45)
-        x1 = x + math.cos(angulo) * 14
-        y1 = y + math.sin(angulo) * 14
-        x2 = x + math.cos(angulo) * 31
-        y2 = y + math.sin(angulo) * 31
-        arcade.draw_line(x1, y1, x2, y2, BRANCO, 8)
-
-    arcade.draw_circle_filled(x, y, 18, (35, 39, 46, 255))
-    arcade.draw_circle_outline(x, y, 18, BRANCO, 5)
-    arcade.draw_circle_filled(x, y, 7, COR_PECA)
-    arcade.draw_circle_outline(x, y, 36, (38, 42, 52), 3)
+def criar_sprite_contorno(sprite: arcade.Sprite, dx: float, dy: float) -> arcade.Sprite:
+    """Cria uma copia escura do sprite para ser usada como contorno em SpriteList."""
+    contorno = arcade.Sprite()
+    contorno.texture = sprite.texture
+    contorno.center_x = sprite.center_x + dx
+    contorno.center_y = sprite.center_y + dy
+    contorno.width = sprite.width
+    contorno.height = sprite.height
+    contorno.angle = sprite.angle
+    contorno.color = (12, 14, 18)
+    contorno.alpha = 220
+    return contorno
 
 
 def manter_no_mundo(sprite: arcade.Sprite) -> None:
@@ -564,15 +539,12 @@ class KitVida:
 
     def desenhar(self) -> None:
         if self.ativo:
-            raio = 27 + math.sin(self.pulso) * 4
-            arcade.draw_circle_filled(self.x, self.y, raio, (37, 125, 78, 92))
             self.sprite.center_y = self.y + math.sin(self.pulso) * 2
             desenhar_sprite_solto(self.sprite)
             arcade.draw_line(self.x - 12, self.y, self.x + 12, self.y, BRANCO, 4)
             arcade.draw_line(self.x, self.y - 12, self.x, self.y + 12, BRANCO, 4)
-            arcade.draw_circle_outline(self.x, self.y, raio, COR_VIDA, 2)
         else:
-            arcade.draw_circle_outline(self.x, self.y, 18, CINZA_ESCURO, 2)
+            return
 
 
 class Peca:
@@ -581,6 +553,7 @@ class Peca:
         self.x = x
         self.y = y
         self.sprite = criar_sprite_item(textura, x, y, 66)
+        self.texto = arcade.Text(f"Peca {self.numero}", self.x, self.y - 52, BRANCO, 12, anchor_x="center")
         self.coletada = False
         self.pulso = random.uniform(0, math.tau)
 
@@ -595,8 +568,8 @@ class Peca:
         raio = 35 + math.sin(self.pulso) * 4
         arcade.draw_circle_filled(self.x, self.y, raio, (163, 128, 37, 80))
         arcade.draw_circle_outline(self.x, self.y, raio, COR_PECA, 2)
-        desenhar_icone_engrenagem(self.x, self.sprite.center_y, self.sprite.angle)
-        arcade.draw_text(f"Peca {self.numero}", self.x, self.y - 52, BRANCO, 12, anchor_x="center")
+        desenhar_sprite_solto(self.sprite)
+        self.texto.draw()
 
 
 class PerigoCenario:
@@ -748,7 +721,6 @@ class InimigoBase:
         y = self.sprite.center_y + 42
         arcade.draw_lrbt_rectangle_filled(x - largura / 2, x + largura / 2, y, y + altura, (42, 48, 60))
         arcade.draw_lrbt_rectangle_filled(x - largura / 2, x - largura / 2 + largura * proporcao, y, y + altura, self.cor)
-        arcade.draw_text(self.estado_texto, x, y + 12, BRANCO, 10, anchor_x="center")
 
 
 class GuardaCampoVisao(InimigoBase):
@@ -1024,30 +996,53 @@ class ComandanteUtilidade(InimigoBase):
 
 
 class TelaMenu(arcade.View):
+    def __init__(self) -> None:
+        super().__init__()
+        self.textura_menu = arcade.load_texture(TEXTURA_MENU)
+
     def on_show_view(self) -> None:
         arcade.set_background_color(COR_FUNDO)
 
     def on_draw(self) -> None:
         self.clear()
-        arcade.draw_text("BASE DE EXTRACAO", LARGURA_TELA / 2, 470, BRANCO, 44, anchor_x="center")
-        arcade.draw_text(
-            "Colete 4 engrenagens, sobreviva aos sistemas de IA e alcance a extracao.",
-            LARGURA_TELA / 2,
-            410,
-            CINZA,
-            18,
-            anchor_x="center",
-        )
-        arcade.draw_text("ENTER - iniciar", LARGURA_TELA / 2, 300, COR_PECA, 22, anchor_x="center")
-        arcade.draw_text("WASD ou setas movem | Mouse atira | R reinicia", LARGURA_TELA / 2, 260, CINZA, 15, anchor_x="center")
 
-        textos = [
-            "IA 1: guardas usam Campo de Visao + Raycasting",
-            "IA 2: cacador usa A* para contornar obstaculos",
-            "IA 3: comandante usa Utility AI para decidir acao",
+        # A imagem tem proporcao larga, entao ela e ampliada ate cobrir a tela.
+        escala = max(LARGURA_TELA / self.textura_menu.width, ALTURA_TELA / self.textura_menu.height)
+        largura_fundo = self.textura_menu.width * escala
+        altura_fundo = self.textura_menu.height * escala
+        arcade.draw_texture_rect(
+            texture=self.textura_menu,
+            rect=retangulo_centralizado(LARGURA_TELA / 2, ALTURA_TELA / 2, largura_fundo, altura_fundo),
+        )
+
+        # Camadas escuras deixam o texto legivel sem esconder totalmente a arte.
+        arcade.draw_lrbt_rectangle_filled(0, LARGURA_TELA, 0, ALTURA_TELA, (4, 7, 12, 80))
+        arcade.draw_lrbt_rectangle_filled(0, 650, 0, ALTURA_TELA, (4, 7, 12, 155))
+
+        arcade.draw_text("TANK COLLECTION", 58, 535, BRANCO, 45, anchor_x="left")
+        arcade.draw_text(
+            "Colete as engrenagens e sobreviva aos tanques inimigos.",
+            62,
+            480,
+            CINZA,
+            17,
+            anchor_x="left",
+        )
+        arcade.draw_text("Depois avance até a zona de extração.", 62, 452, CINZA, 17, anchor_x="left")
+
+        arcade.draw_text("ENTER - iniciar missão", 62, 340, COR_PECA, 24, anchor_x="left")
+        arcade.draw_text("WASD - mover", 62, 288, BRANCO, 16, anchor_x="left")
+        arcade.draw_text("Mouse - mirar e atirar", 62, 260, BRANCO, 16, anchor_x="left")
+        arcade.draw_text("R - reiniciar partida", 62, 232, BRANCO, 16, anchor_x="left")
+
+        textos_ia = [
+            "IAs usadas:",
+            "Campo de visão + Raycasting",
+            "A* para perseguuir o jogador",
+            "Utility AI para decidir a ação",
         ]
-        for indice, texto in enumerate(textos):
-            arcade.draw_text(texto, LARGURA_TELA / 2, 180 - indice * 34, BRANCO, 15, anchor_x="center")
+        for indice, texto in enumerate(textos_ia):
+            arcade.draw_text(texto, 62, 132 - indice * 24, CINZA, 14, anchor_x="left")
 
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key == arcade.key.ENTER:
@@ -1109,7 +1104,8 @@ class TelaJogo(arcade.View):
         self.lista_obstaculos = arcade.SpriteList(use_spatial_hash=True)
         self.lista_contorno_muros = arcade.SpriteList()
         self.lista_decoracao = arcade.SpriteList()
-        self.objetos_com_contorno: list[tuple[arcade.Sprite, int]] = []
+        self.lista_contorno_objetos = arcade.SpriteList()
+        self.contornos_por_sprite: dict[arcade.Sprite, list[arcade.Sprite]] = {}
         self.lista_jogador = arcade.SpriteList()
         self.lista_inimigos = arcade.SpriteList()
         self.lista_tiros_jogador = arcade.SpriteList()
@@ -1122,12 +1118,16 @@ class TelaJogo(arcade.View):
         self.pecas: list[Peca] = []
         self.perigos: list[PerigoCenario] = []
         self.sprite_extracao = arcade.SpriteSolidColor(104, 104, 0, 0, (72, 224, 146, 95))
+        self.sprite_bandeira_extracao = criar_sprite_item(arcade.load_texture(TEXTURA_SAIDA), 0, 0, 58)
+        self.texto_extracao = arcade.Text("EXTRACAO", 0, 0, BRANCO, 12, anchor_x="center")
 
         self.pecas_coletadas = 0
         self.pontuacao = 0
         self.tempo_jogo = 0.0
         self.mensagem_objetivo = "Colete as 4 engrenagens"
         self.tempo_mensagem = 0.0
+        self.texto_hud = arcade.Text("", 255, ALTURA_TELA - 52, BRANCO, 15)
+        self.tempo_atualizar_hud = 0.0
 
         self.texturas = {
             "grama1": arcade.load_texture(TEXTURA_GRAMA_1),
@@ -1155,7 +1155,8 @@ class TelaJogo(arcade.View):
         self.lista_obstaculos = arcade.SpriteList(use_spatial_hash=True)
         self.lista_contorno_muros = arcade.SpriteList()
         self.lista_decoracao = arcade.SpriteList()
-        self.objetos_com_contorno = []
+        self.lista_contorno_objetos = arcade.SpriteList()
+        self.contornos_por_sprite = {}
         self.lista_jogador = arcade.SpriteList()
         self.lista_inimigos = arcade.SpriteList()
         self.lista_tiros_jogador = arcade.SpriteList()
@@ -1169,6 +1170,7 @@ class TelaJogo(arcade.View):
         self.pontuacao = 0
         self.tempo_jogo = 0.0
         self.mensagem_objetivo = "Colete as 4 engrenagens"
+        self.tempo_atualizar_hud = 0.0
 
         posicao_jogador = celula_para_posicao(25, 2)
         self.jogador = Jogador(*posicao_jogador)
@@ -1202,13 +1204,30 @@ class TelaJogo(arcade.View):
                 elif caractere == "C":
                     caixa = criar_sprite_tile(self.texturas["caixa"], x, y)
                     caixa.angle = random.choice([-8, -4, 5, 10])
-                    self.objetos_com_contorno.append((caixa, 2))
+                    self.adicionar_contorno_objeto(caixa, 2)
                     self.lista_obstaculos.append(caixa)
                 elif caractere == "B":
                     rocha = criar_sprite_item(self.texturas["rocha"], x, y, 58)
                     rocha.angle = random.choice([-14, -6, 8, 16])
-                    self.objetos_com_contorno.append((rocha, 2))
+                    self.adicionar_contorno_objeto(rocha, 2)
                     self.lista_obstaculos.append(rocha)
+
+    def adicionar_contorno_objeto(self, sprite: arcade.Sprite, espessura: int) -> None:
+        """Prepara o contorno uma vez, em vez de redesenhar oito copias a cada frame."""
+        deslocamentos = (
+            (-espessura, 0),
+            (espessura, 0),
+            (0, -espessura),
+            (0, espessura),
+            (-espessura, -espessura),
+            (-espessura, espessura),
+            (espessura, -espessura),
+            (espessura, espessura),
+        )
+        contornos = [criar_sprite_contorno(sprite, dx, dy) for dx, dy in deslocamentos]
+        self.contornos_por_sprite[sprite] = contornos
+        for contorno in contornos:
+            self.lista_contorno_objetos.append(contorno)
 
     def escolher_textura_chao(self, linha: int, coluna: int) -> arcade.Texture:
         caractere = self.mapa[linha][coluna]
@@ -1252,6 +1271,10 @@ class TelaJogo(arcade.View):
 
         celula_saida = procurar_celulas(self.mapa, "E")[0]
         self.sprite_extracao.center_x, self.sprite_extracao.center_y = celula_para_posicao(celula_saida[0], celula_saida[1])
+        self.sprite_bandeira_extracao.center_x = self.sprite_extracao.center_x
+        self.sprite_bandeira_extracao.center_y = self.sprite_extracao.center_y + 8
+        self.texto_extracao.x = self.sprite_extracao.center_x
+        self.texto_extracao.y = self.sprite_extracao.center_y - 78
 
         guarda_1_x, guarda_1_y = celula_para_posicao(20, 7)
         guarda_1 = GuardaCampoVisao(
@@ -1304,7 +1327,7 @@ class TelaJogo(arcade.View):
             sprite.angle = angulo
             if nome_textura == "tanque_destruido":
                 sprite.alpha = 170
-            self.objetos_com_contorno.append((sprite, 2))
+            self.adicionar_contorno_objeto(sprite, 2)
             self.lista_decoracao.append(sprite)
             if nome_textura in ("bomba", "spikes"):
                 self.perigos.append(PerigoCenario(nome_textura, sprite))
@@ -1325,18 +1348,19 @@ class TelaJogo(arcade.View):
         self.lista_chao.draw()
         self.desenhar_extracao()
         self.lista_contorno_muros.draw()
-        self.desenhar_contornos_objetos()
+        self.lista_contorno_objetos.draw()
         self.lista_decoracao.draw()
 
-        for inimigo in self.inimigos:
-            if not inimigo.ativo:
-                continue
-            if isinstance(inimigo, GuardaCampoVisao):
-                inimigo.desenhar_debug(self)
-            elif isinstance(inimigo, CacadorAEstrela):
-                inimigo.desenhar_debug()
-            elif isinstance(inimigo, ComandanteUtilidade):
-                inimigo.desenhar_debug()
+        if MOSTRAR_DEBUG_IA:
+            for inimigo in self.inimigos:
+                if not inimigo.ativo:
+                    continue
+                if isinstance(inimigo, GuardaCampoVisao):
+                    inimigo.desenhar_debug(self)
+                elif isinstance(inimigo, CacadorAEstrela):
+                    inimigo.desenhar_debug()
+                elif isinstance(inimigo, ComandanteUtilidade):
+                    inimigo.desenhar_debug()
 
         for kit in self.kits:
             kit.desenhar()
@@ -1354,38 +1378,38 @@ class TelaJogo(arcade.View):
             if inimigo.ativo:
                 inimigo.desenhar_barra_vida()
 
-    def desenhar_contornos_objetos(self) -> None:
-        for sprite, espessura in self.objetos_com_contorno:
-            desenhar_contorno_sprite(sprite, espessura)
-
     def desenhar_extracao(self) -> None:
         ativa = self.pecas_coletadas >= TOTAL_PECAS
         cor = COR_EXTRACAO_ABERTA if ativa else COR_EXTRACAO_FECHADA
         arcade.draw_circle_filled(self.sprite_extracao.center_x, self.sprite_extracao.center_y, 62, (cor[0], cor[1], cor[2], 72))
         arcade.draw_circle_outline(self.sprite_extracao.center_x, self.sprite_extracao.center_y, 64, cor, 4)
-        arcade.draw_text("EXTRACAO", self.sprite_extracao.center_x, self.sprite_extracao.center_y - 78, BRANCO, 12, anchor_x="center")
-        bandeira = criar_sprite_item(self.texturas["saida"], self.sprite_extracao.center_x, self.sprite_extracao.center_y + 8, 58)
-        desenhar_sprite_solto(bandeira)
+        self.texto_extracao.draw()
+        desenhar_sprite_solto(self.sprite_bandeira_extracao)
 
     def desenhar_hud(self) -> None:
         arcade.draw_lrbt_rectangle_filled(0, LARGURA_TELA, ALTURA_TELA - 76, ALTURA_TELA, COR_HUD)
         arcade.draw_lrbt_rectangle_outline(0, LARGURA_TELA, ALTURA_TELA - 76, ALTURA_TELA, COR_HUD_BORDA, 2)
 
         y_texto = ALTURA_TELA - 52
-        self.desenhar_barra(24, ALTURA_TELA - 48, 210, 18, self.jogador.vida / VIDA_MAXIMA, COR_JOGADOR, "Vida")
-        arcade.draw_text(f"Pecas: {self.pecas_coletadas}/{TOTAL_PECAS}", 270, y_texto, BRANCO, 16)
-        arcade.draw_text(f"Pontos: {self.pontuacao}", 390, y_texto, COR_PECA, 16)
-        arcade.draw_text(f"Tempo: {formatar_tempo(self.tempo_jogo)}", 535, y_texto, BRANCO, 16)
-        arcade.draw_text(f"Missao: {self.mensagem_objetivo}", 700, y_texto, COR_PECA, 15)
+        self.desenhar_barra(24, ALTURA_TELA - 48, 210, 18, self.jogador.vida / VIDA_MAXIMA, COR_JOGADOR)
+        if self.tempo_atualizar_hud <= 0:
+            self.texto_hud.text = (
+                f"Vida: {int(self.jogador.vida)}  |  Pecas: {self.pecas_coletadas}/{TOTAL_PECAS}  |  "
+                f"Pontos: {self.pontuacao}  |  Tempo: {formatar_tempo(self.tempo_jogo)}  |  "
+                f"Missao: {self.mensagem_objetivo}"
+            )
+            self.tempo_atualizar_hud = 0.15
+        self.texto_hud.y = y_texto
+        self.texto_hud.draw()
 
-    def desenhar_barra(self, x: float, y: float, largura: float, altura: float, proporcao: float, cor: tuple[int, int, int], texto: str) -> None:
+    def desenhar_barra(self, x: float, y: float, largura: float, altura: float, proporcao: float, cor: tuple[int, int, int]) -> None:
         arcade.draw_lrbt_rectangle_filled(x, x + largura, y, y + altura, (42, 50, 64))
         arcade.draw_lrbt_rectangle_filled(x, x + largura * limitar(proporcao, 0, 1), y, y + altura, cor)
         arcade.draw_lrbt_rectangle_outline(x, x + largura, y, y + altura, BRANCO, 1)
-        arcade.draw_text(f"{texto}: {int(proporcao * 100)}", x + 8, y + 2, BRANCO, 11)
 
     def on_update(self, delta_time: float) -> None:
         self.tempo_mensagem = max(0, self.tempo_mensagem - delta_time)
+        self.tempo_atualizar_hud = max(0, self.tempo_atualizar_hud - delta_time)
         self.tempo_jogo += delta_time
 
         self.jogador.atualizar(delta_time, self.mapa)
@@ -1477,11 +1501,8 @@ class TelaJogo(arcade.View):
     def explodir_bomba(self, perigo: PerigoCenario) -> None:
         perigo.ativo = False
         perigo.sprite.remove_from_sprite_lists()
-        self.objetos_com_contorno = [
-            (sprite, espessura)
-            for sprite, espessura in self.objetos_com_contorno
-            if sprite is not perigo.sprite
-        ]
+        for contorno in self.contornos_por_sprite.pop(perigo.sprite, []):
+            contorno.remove_from_sprite_lists()
         if perigo in self.perigos:
             self.perigos.remove(perigo)
 
