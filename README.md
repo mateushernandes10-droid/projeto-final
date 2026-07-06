@@ -56,7 +56,7 @@ O cacador escuro usa A* para perseguir o jogador pelo mapa. Ele converte a posic
 
 ### 3. Utility AI
 
-O comandante calcula pontuacoes para quatro acoes: atacar, buscar vida, fugir e patrulhar. A maior pontuacao define o comportamento atual. Essa decisao aparece no comportamento do boss, enquanto o HUD mostra apenas informacoes importantes para o jogador.
+O comandante calcula pontuacoes para quatro acoes: atacar, buscar vida, fugir e patrulhar. A maior pontuacao define o comportamento atual. Quando precisa buscar reparo ou fugir, ele usa A* para chegar ao destino desviando de paredes e caixas.
 
 ## HUD e resultado
 

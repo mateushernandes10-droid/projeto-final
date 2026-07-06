@@ -65,6 +65,8 @@ Exemplo de explicacao:
 
 > Se o jogador esta perto e o comandante tem vida, atacar fica mais forte. Se o comandante esta com pouca vida e existe kit perto, buscar vida pode vencer.
 
+Quando ele escolhe buscar reparo ou fugir, o movimento usa A*. Assim o boss nao tenta andar em linha reta contra paredes; ele calcula um caminho pelas celulas livres.
+
 ## 7. Kits de reparo compartilhados
 
 Os kits com icone de chave de boca podem ser usados pelo jogador e pelos inimigos. Como todos sao tanques, a recuperacao de vida representa um reparo. Se alguem encosta no kit com vida abaixo do maximo, recupera vida e o kit entra em respawn.

@@ -888,6 +888,9 @@ class ComandanteUtilidade(InimigoBase):
         self.pontuacoes: list[PontuacaoUtilidade] = []
         self.alvo_x = x
         self.alvo_y = y
+        self.caminho: list[tuple[int, int]] = []
+        self.destino_caminho: Optional[tuple[int, int]] = None
+        self.tempo_recalcular_caminho = 0.0
 
     def calcular_utilidades(self, jogo: "TelaJogo") -> None:
         distancia_jogador = calcular_distancia(
@@ -951,10 +954,12 @@ class ComandanteUtilidade(InimigoBase):
 
     def atualizar(self, jogo: "TelaJogo", delta_time: float) -> list[Tiro]:
         self.recarga_tiro = max(0, self.recarga_tiro - delta_time)
+        self.tempo_recalcular_caminho = max(0, self.tempo_recalcular_caminho - delta_time)
         tiros = []
         self.calcular_utilidades(jogo)
 
         if self.acao_atual == self.ATACAR:
+            self.caminho = []
             self.alvo_x = jogo.jogador.sprite.center_x
             self.alvo_y = jogo.jogador.sprite.center_y
             distancia = calcular_distancia(self.sprite.center_x, self.sprite.center_y, self.alvo_x, self.alvo_y)
@@ -973,13 +978,14 @@ class ComandanteUtilidade(InimigoBase):
             if kit is not None:
                 self.alvo_x = kit.x
                 self.alvo_y = kit.y
-                self.mover_para(self.alvo_x, self.alvo_y, VELOCIDADE_COMANDANTE, delta_time, jogo)
+                self.mover_por_caminho(self.alvo_x, self.alvo_y, VELOCIDADE_COMANDANTE, delta_time, jogo)
 
         elif self.acao_atual == self.FUGIR:
             self.alvo_x, self.alvo_y = jogo.encontrar_ponto_seguro(self.sprite.center_x, self.sprite.center_y)
-            self.mover_para(self.alvo_x, self.alvo_y, VELOCIDADE_COMANDANTE + 35, delta_time, jogo)
+            self.mover_por_caminho(self.alvo_x, self.alvo_y, VELOCIDADE_COMANDANTE + 35, delta_time, jogo)
 
         else:
+            self.caminho = []
             self.alvo_x, self.alvo_y = self.pontos_patrulha[self.indice_patrulha]
             if calcular_distancia(self.sprite.center_x, self.sprite.center_y, self.alvo_x, self.alvo_y) < 22:
                 self.indice_patrulha = (self.indice_patrulha + 1) % len(self.pontos_patrulha)
@@ -988,7 +994,37 @@ class ComandanteUtilidade(InimigoBase):
 
         return tiros
 
+    def mover_por_caminho(self, alvo_x: float, alvo_y: float, velocidade: float, delta_time: float, jogo: "TelaJogo") -> None:
+        """Usa A* para chegar no alvo desviando de paredes, caixas e rochas."""
+        inicio = posicao_para_celula(self.sprite.center_x, self.sprite.center_y)
+        destino = posicao_para_celula(alvo_x, alvo_y)
+
+        if destino != self.destino_caminho or self.tempo_recalcular_caminho <= 0 or not self.caminho:
+            self.caminho = astar(jogo.mapa, inicio, destino)
+            self.destino_caminho = destino
+            self.tempo_recalcular_caminho = 0.35
+
+        if len(self.caminho) <= 1:
+            self.mover_para(alvo_x, alvo_y, velocidade, delta_time, jogo)
+            return
+
+        proxima_celula = self.caminho[1]
+        proximo_x, proximo_y = celula_para_posicao(proxima_celula[0], proxima_celula[1])
+        if calcular_distancia(self.sprite.center_x, self.sprite.center_y, proximo_x, proximo_y) < 18 and len(self.caminho) > 2:
+            self.caminho.pop(0)
+            proxima_celula = self.caminho[1]
+            proximo_x, proximo_y = celula_para_posicao(proxima_celula[0], proxima_celula[1])
+
+        self.mover_para(proximo_x, proximo_y, velocidade, delta_time, jogo)
+
     def desenhar_debug(self) -> None:
+        if len(self.caminho) > 1:
+            pontos = [celula_para_posicao(linha, coluna) for linha, coluna in self.caminho[:18]]
+            for indice in range(len(pontos) - 1):
+                arcade.draw_line(pontos[indice][0], pontos[indice][1], pontos[indice + 1][0], pontos[indice + 1][1], COR_VIDA, 3)
+            for x, y in pontos:
+                arcade.draw_circle_filled(x, y, 6, (74, 213, 126, 150))
+
         arcade.draw_line(self.sprite.center_x, self.sprite.center_y, self.alvo_x, self.alvo_y, COR_UTILIDADE, 4)
         arcade.draw_circle_outline(self.alvo_x, self.alvo_y, 18, COR_UTILIDADE, 3)
 
