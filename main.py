@@ -51,7 +51,7 @@ DISTANCIA_ATIVAR_ASTAR = 850
 TOTAL_PECAS = 4
 MELHOR_PONTUACAO = 0
 MELHOR_TEMPO: Optional[float] = None
-MOSTRAR_DEBUG_IA = False
+DEBUG_IA_INICIAL = False
 
 
 # Assets usados pelo jogo. Eles ficam dentro da pasta do projeto para facilitar a entrega em .zip.
@@ -374,7 +374,7 @@ def criar_matriz_mapa() -> list[list[str]]:
         (20, 11): "V",
         (12, 30): "V",
         (16, 20): "A",
-        (6, 36): "U",
+        (9, 34): "U",
     }
 
     for (linha, coluna), caractere in especiais.items():
@@ -784,8 +784,8 @@ class GuardaCampoVisao(InimigoBase):
         angulo_frente = math.atan2(frente_y, frente_x)
         meio = math.radians(ANGULO_CAMPO_VISAO / 2)
         pontos = [(self.sprite.center_x, self.sprite.center_y)]
-        for indice in range(17):
-            angulo = angulo_frente - meio + (2 * meio) * indice / 16
+        for indice in range(11):
+            angulo = angulo_frente - meio + (2 * meio) * indice / 10
             pontos.append(
                 (
                     self.sprite.center_x + math.cos(angulo) * DISTANCIA_VISAO,
@@ -1034,6 +1034,7 @@ class TelaMenu(arcade.View):
         arcade.draw_text("WASD - mover", 62, 288, BRANCO, 16, anchor_x="left")
         arcade.draw_text("Mouse - mirar e atirar", 62, 260, BRANCO, 16, anchor_x="left")
         arcade.draw_text("R - reiniciar partida", 62, 232, BRANCO, 16, anchor_x="left")
+        arcade.draw_text("E - mostrar/ocultar debug", 62, 204, BRANCO, 16, anchor_x="left")
 
         textos_ia = [
             "IAs usadas:",
@@ -1139,6 +1140,7 @@ class TelaJogo(arcade.View):
         self.tempo_mensagem = 0.0
         self.texto_hud = arcade.Text("", 255, ALTURA_TELA - 52, BRANCO, 15)
         self.tempo_atualizar_hud = 0.0
+        self.mostrar_debug_ia = DEBUG_IA_INICIAL
 
         self.texturas = {
             "grama1": arcade.load_texture(TEXTURA_GRAMA_1),
@@ -1182,6 +1184,7 @@ class TelaJogo(arcade.View):
         self.tempo_jogo = 0.0
         self.mensagem_objetivo = "Colete as 4 engrenagens"
         self.tempo_atualizar_hud = 0.0
+        self.mostrar_debug_ia = DEBUG_IA_INICIAL
 
         posicao_jogador = celula_para_posicao(25, 2)
         self.jogador = Jogador(*posicao_jogador)
@@ -1304,16 +1307,27 @@ class TelaJogo(arcade.View):
             guarda_2_y,
             [celula_para_posicao(13, 28), celula_para_posicao(13, 36), celula_para_posicao(17, 36), celula_para_posicao(17, 28)],
         )
+        guarda_3_x, guarda_3_y = celula_para_posicao(8, 9)
+        guarda_3 = GuardaCampoVisao(
+            guarda_3_x,
+            guarda_3_y,
+            [
+                celula_para_posicao(8, 9),
+                celula_para_posicao(8, 12),
+                celula_para_posicao(9, 12),
+                celula_para_posicao(9, 9),
+            ],
+        )
         cacador_x, cacador_y = celula_para_posicao(16, 20)
         cacador = CacadorAEstrela(cacador_x, cacador_y)
-        comandante_x, comandante_y = celula_para_posicao(6, 36)
+        comandante_x, comandante_y = celula_para_posicao(9, 34)
         comandante = ComandanteUtilidade(
             comandante_x,
             comandante_y,
-            [celula_para_posicao(4, 32), celula_para_posicao(4, 37), celula_para_posicao(8, 37), celula_para_posicao(8, 32)],
+            [celula_para_posicao(9, 34), celula_para_posicao(9, 37), celula_para_posicao(12, 37), celula_para_posicao(12, 34)],
         )
 
-        self.inimigos = [guarda_1, guarda_2, cacador, comandante]
+        self.inimigos = [guarda_1, guarda_2, guarda_3, cacador, comandante]
         for inimigo in self.inimigos:
             self.lista_inimigos.append(inimigo.sprite)
 
@@ -1362,13 +1376,16 @@ class TelaJogo(arcade.View):
         self.lista_contorno_objetos.draw()
         self.lista_decoracao.draw()
 
-        if MOSTRAR_DEBUG_IA:
+        if self.mostrar_debug_ia:
             for inimigo in self.inimigos:
-                if not inimigo.ativo:
-                    continue
-                if isinstance(inimigo, GuardaCampoVisao):
+                if inimigo.ativo and isinstance(inimigo, GuardaCampoVisao) and self.sprite_perto_camera(inimigo.sprite, DISTANCIA_VISAO + 80):
                     inimigo.desenhar_debug(self)
-                elif isinstance(inimigo, CacadorAEstrela):
+
+        if self.mostrar_debug_ia:
+            for inimigo in self.inimigos:
+                if not inimigo.ativo or not self.sprite_perto_camera(inimigo.sprite, DISTANCIA_VISAO + 80):
+                    continue
+                if isinstance(inimigo, CacadorAEstrela):
                     inimigo.desenhar_debug()
                 elif isinstance(inimigo, ComandanteUtilidade):
                     inimigo.desenhar_debug()
@@ -1404,10 +1421,11 @@ class TelaJogo(arcade.View):
         y_texto = ALTURA_TELA - 52
         self.desenhar_barra(24, ALTURA_TELA - 48, 210, 18, self.jogador.vida / VIDA_MAXIMA, COR_JOGADOR)
         if self.tempo_atualizar_hud <= 0:
+            texto_debug = "  |  Debug IA: ON" if self.mostrar_debug_ia else ""
             self.texto_hud.text = (
                 f"Vida: {int(self.jogador.vida)}  |  Pecas: {self.pecas_coletadas}/{TOTAL_PECAS}  |  "
                 f"Pontos: {self.pontuacao}  |  Tempo: {formatar_tempo(self.tempo_jogo)}  |  "
-                f"Missao: {self.mensagem_objetivo}"
+                f"Missao: {self.mensagem_objetivo}{texto_debug}"
             )
             self.tempo_atualizar_hud = 0.15
         self.texto_hud.y = y_texto
@@ -1417,6 +1435,14 @@ class TelaJogo(arcade.View):
         arcade.draw_lrbt_rectangle_filled(x, x + largura, y, y + altura, (42, 50, 64))
         arcade.draw_lrbt_rectangle_filled(x, x + largura * limitar(proporcao, 0, 1), y, y + altura, cor)
         arcade.draw_lrbt_rectangle_outline(x, x + largura, y, y + altura, BRANCO, 1)
+
+    def sprite_perto_camera(self, sprite: arcade.Sprite, margem: float) -> bool:
+        metade_largura = self.camera.viewport_width / 2 + margem
+        metade_altura = self.camera.viewport_height / 2 + margem
+        return (
+            abs(sprite.center_x - self.camera.position[0]) <= metade_largura
+            and abs(sprite.center_y - self.camera.position[1]) <= metade_altura
+        )
 
     def on_update(self, delta_time: float) -> None:
         self.tempo_mensagem = max(0, self.tempo_mensagem - delta_time)
@@ -1617,6 +1643,10 @@ class TelaJogo(arcade.View):
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key == arcade.key.R:
             self.window.show_view(TelaJogo())
+            return
+        if key == arcade.key.E:
+            self.mostrar_debug_ia = not self.mostrar_debug_ia
+            self.tempo_atualizar_hud = 0
             return
         if key == arcade.key.ESCAPE:
             self.window.show_view(TelaMenu())

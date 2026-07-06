@@ -52,7 +52,7 @@ Os guardas vermelhos patrulham e possuem um cone de visao. Eles so detectam o jo
 
 ### 2. A* Pathfinding
 
-O cacador escuro usa A* para perseguir o jogador pelo mapa. Ele converte a posicao do jogador e do inimigo para celulas da matriz, calcula o caminho e segue os pontos do trajeto encontrado. A visualizacao de debug pode ser ligada no codigo mudando `MOSTRAR_DEBUG_IA` para `True`.
+O cacador escuro usa A* para perseguir o jogador pelo mapa. Ele converte a posicao do jogador e do inimigo para celulas da matriz, calcula o caminho e segue os pontos do trajeto encontrado. A visualizacao de debug pode ser ligada durante o jogo apertando `E`.
 
 ### 3. Utility AI
 
