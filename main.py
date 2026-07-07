@@ -1121,7 +1121,7 @@ class TelaMenu(arcade.View):
         textos_ia = [
             "IAs usadas:",
             "Campo de visão + Raycasting",
-            "A* para perseguuir o jogador",
+            "A* para perseguir o jogador",
             "Utility AI para decidir a ação",
         ]
         for indice, texto in enumerate(textos_ia):
