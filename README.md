@@ -1,6 +1,6 @@
 # Projeto Final - Base de Extracao
 
-Grupo: Mateus H e Marlon
+Grupo: Mateus H e Robson
 
 Jogo top-down feito em Python com Arcade 3.3.3. O jogador controla um tanque azul dentro de uma base de guerra, coleta 4 engrenagens e depois precisa chegar ate a area de extracao.
 
