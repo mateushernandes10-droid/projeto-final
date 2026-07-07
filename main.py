@@ -84,6 +84,16 @@ TEXTURA_ENGRENAGEM = caminho_asset("onscreen_controls/shaded_dark/gear.png")
 TEXTURA_SAIDA = caminho_asset("images/items/flagGreen2.png")
 TEXTURA_MENU = caminho_asset("images/menu/tank_battle_menu.png")
 
+SOM_MUSICA_INTERFACE = caminho_asset("sounds/1918.mp3")
+SOM_COLETA_PECA = caminho_asset("sounds/coin3.wav")
+SOM_EXPLOSAO = caminho_asset("sounds/explosion1.wav")
+SOM_DISPARO = caminho_asset("sounds/hit1.wav")
+SOM_ESPINHO_DERROTA = caminho_asset("sounds/fall3.wav")
+SOM_REPARO = caminho_asset("sounds/upgrade1.wav")
+
+som_musica_interface = None
+musica_interface_tocando = None
+
 COR_FUNDO = (12, 16, 24)
 COR_HUD = (16, 22, 32)
 COR_HUD_BORDA = (74, 89, 112)
@@ -105,6 +115,39 @@ COR_EXPLOSAO = (255, 176, 64)
 
 
 # FUNCOES AUXILIARES
+
+def tocar_som_seguro(som: arcade.Sound | None, volume: float = 1.0, loop: bool = False):
+    """Toca som sem deixar o jogo fechar caso o computador esteja sem audio."""
+    if som is None:
+        return None
+    try:
+        return arcade.play_sound(som, volume=volume, loop=loop)
+    except Exception:
+        return None
+
+
+def tocar_musica_interface() -> None:
+    """Liga a musica usada no menu e na tela final."""
+    global som_musica_interface, musica_interface_tocando
+
+    if musica_interface_tocando is not None:
+        return
+    if som_musica_interface is None:
+        som_musica_interface = arcade.load_sound(SOM_MUSICA_INTERFACE, streaming=True)
+    musica_interface_tocando = tocar_som_seguro(som_musica_interface, volume=0.35, loop=True)
+
+
+def parar_musica_interface() -> None:
+    """Para a musica quando a partida comeca."""
+    global musica_interface_tocando
+
+    if musica_interface_tocando is None:
+        return
+    try:
+        arcade.stop_sound(musica_interface_tocando)
+    except Exception:
+        pass
+    musica_interface_tocando = None
 
 def limitar(valor: float, minimo: float, maximo: float) -> float:
     """Mantem um valor dentro de um intervalo."""
@@ -1040,6 +1083,7 @@ class TelaMenu(arcade.View):
 
     def on_show_view(self) -> None:
         arcade.set_background_color(COR_FUNDO)
+        tocar_musica_interface()
 
     def on_draw(self) -> None:
         self.clear()
@@ -1140,6 +1184,7 @@ class TelaFim(arcade.View):
 
     def on_show_view(self) -> None:
         arcade.set_background_color(COR_FUNDO)
+        tocar_musica_interface()
 
     def on_draw(self) -> None:
         self.clear()
@@ -1179,6 +1224,7 @@ class TelaJogo(arcade.View):
 
     def __init__(self) -> None:
         super().__init__()
+        parar_musica_interface()
         self.camera = arcade.Camera2D()
         self.mapa = criar_matriz_mapa()
 
@@ -1211,6 +1257,13 @@ class TelaJogo(arcade.View):
         self.texto_hud = arcade.Text("", 255, ALTURA_TELA - 52, BRANCO, 15)
         self.tempo_atualizar_hud = 0.0
         self.mostrar_debug_ia = DEBUG_IA_INICIAL
+        self.sons = {
+            "disparo": arcade.load_sound(SOM_DISPARO),
+            "espinho_derrota": arcade.load_sound(SOM_ESPINHO_DERROTA),
+            "explosao": arcade.load_sound(SOM_EXPLOSAO),
+            "peca": arcade.load_sound(SOM_COLETA_PECA),
+            "reparo": arcade.load_sound(SOM_REPARO),
+        }
 
         self.texturas = {
             "grama1": arcade.load_texture(TEXTURA_GRAMA_1),
@@ -1232,6 +1285,9 @@ class TelaJogo(arcade.View):
         }
 
         self.setup()
+
+    def tocar_som(self, nome: str, volume: float = 0.7) -> None:
+        tocar_som_seguro(self.sons.get(nome), volume=volume)
 
     def setup(self) -> None:
         self.lista_chao = arcade.SpriteList()
@@ -1546,6 +1602,7 @@ class TelaJogo(arcade.View):
             tiros = inimigo.atualizar(self, delta_time)
             for tiro in tiros:
                 self.lista_tiros_inimigos.append(tiro)
+                self.tocar_som("disparo", 0.35)
                 self.criar_particulas(inimigo.sprite.center_x, inimigo.sprite.center_y, inimigo.cor, 6, 90)
 
     def verificar_colisoes_tiros(self) -> None:
@@ -1560,6 +1617,7 @@ class TelaJogo(arcade.View):
                     inimigo_eliminado = inimigo.sofrer_dano(tiro.dano)
                     if inimigo_eliminado:
                         self.pontuacao += inimigo.pontos
+                        self.tocar_som("espinho_derrota", 0.55)
                     self.criar_particulas(inimigo.sprite.center_x, inimigo.sprite.center_y, COR_PECA, 18, 170)
                     break
 
@@ -1592,6 +1650,7 @@ class TelaJogo(arcade.View):
                 if perigo.recarga_jogador <= 0 and arcade.check_for_collision(self.jogador.sprite, perigo.sprite):
                     self.jogador.vida = limitar(self.jogador.vida - DANO_ESPINHO, 0, VIDA_MAXIMA)
                     perigo.recarga_jogador = RECARGA_DANO_ESPINHO
+                    self.tocar_som("espinho_derrota", 0.5)
                     self.criar_particulas(self.jogador.sprite.center_x, self.jogador.sprite.center_y, COR_ALERTA, 10, 130)
 
                 for inimigo in self.inimigos:
@@ -1602,6 +1661,7 @@ class TelaJogo(arcade.View):
                         inimigo_eliminado = inimigo.sofrer_dano(DANO_ESPINHO)
                         if inimigo_eliminado:
                             self.pontuacao += inimigo.pontos
+                        self.tocar_som("espinho_derrota", 0.5)
                         perigo.recargas_inimigos[chave] = RECARGA_DANO_ESPINHO
                         self.criar_particulas(inimigo.sprite.center_x, inimigo.sprite.center_y, COR_ALERTA, 8, 120)
 
@@ -1615,6 +1675,7 @@ class TelaJogo(arcade.View):
 
         x = perigo.sprite.center_x
         y = perigo.sprite.center_y
+        self.tocar_som("explosao", 0.65)
         self.criar_particulas(x, y, COR_EXPLOSAO, 44, 260)
 
         if calcular_distancia(self.jogador.sprite.center_x, self.jogador.sprite.center_y, x, y) <= RAIO_EXPLOSAO_BOMBA:
@@ -1625,6 +1686,7 @@ class TelaJogo(arcade.View):
                 inimigo_eliminado = inimigo.sofrer_dano(DANO_BOMBA)
                 if inimigo_eliminado:
                     self.pontuacao += inimigo.pontos
+                    self.tocar_som("espinho_derrota", 0.45)
 
     def verificar_coleta_pecas(self) -> None:
         for peca in self.pecas:
@@ -1633,6 +1695,7 @@ class TelaJogo(arcade.View):
             if calcular_distancia(self.jogador.sprite.center_x, self.jogador.sprite.center_y, peca.x, peca.y) <= RAIO_COLETA:
                 peca.coletada = True
                 self.pecas_coletadas += 1
+                self.tocar_som("peca", 0.65)
                 self.criar_particulas(peca.x, peca.y, COR_PECA, 28, 190)
                 if self.pecas_coletadas < TOTAL_PECAS:
                     self.mensagem_objetivo = f"Faltam {TOTAL_PECAS - self.pecas_coletadas} engrenagens"
@@ -1660,6 +1723,7 @@ class TelaJogo(arcade.View):
                 elif inimigo is not None:
                     inimigo.vida = limitar(inimigo.vida + CURA_KIT_VIDA, 0, inimigo.vida_maxima)
                 kit.coletar()
+                self.tocar_som("reparo", 0.65)
                 self.criar_particulas(kit.x, kit.y, COR_VIDA, 20, 150)
                 return
 
@@ -1727,6 +1791,7 @@ class TelaJogo(arcade.View):
                 tiro = self.jogador.atirar(alvo.sprite.center_x, alvo.sprite.center_y)
                 if tiro is not None:
                     self.lista_tiros_jogador.append(tiro)
+                    self.tocar_som("disparo", 0.45)
                     self.criar_particulas(self.jogador.sprite.center_x, self.jogador.sprite.center_y, COR_JOGADOR, 6, 90)
             return
         self.jogador.pressionar(key)
@@ -1741,6 +1806,7 @@ class TelaJogo(arcade.View):
         tiro = self.jogador.atirar(mundo.x, mundo.y)
         if tiro is not None:
             self.lista_tiros_jogador.append(tiro)
+            self.tocar_som("disparo", 0.45)
             self.criar_particulas(self.jogador.sprite.center_x, self.jogador.sprite.center_y, COR_JOGADOR, 6, 90)
 
     def encontrar_inimigo_mais_perto(self) -> Optional[InimigoBase]:

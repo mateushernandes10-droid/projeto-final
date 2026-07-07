@@ -84,4 +84,4 @@ Assim a fase tem progressao: o jogador aprende, explora, enfrenta IA mais clara 
 
 ## 9. Game Feel
 
-O projeto usa movimento continuo com `delta_time`, tiros rapidos, particulas quando existe dano/coleta, objetos de guerra com contorno, bombas que explodem ao toque, espinhos que causam dano, pontuacao por inimigos eliminados, temporizador e HUD com feedback direto. A camera acompanha o jogador para reforcar a sensacao de mapa grande.
+O projeto usa movimento continuo com `delta_time`, tiros rapidos, particulas quando existe dano/coleta, objetos de guerra com contorno, bombas que explodem ao toque, espinhos que causam dano, pontuacao por inimigos eliminados, temporizador e HUD com feedback direto. Tambem foram adicionados efeitos sonoros para tiro, reparo, coleta, explosao, espinhos e derrota dos inimigos, alem de musica no menu e na tela final. A camera acompanha o jogador para reforcar a sensacao de mapa grande.

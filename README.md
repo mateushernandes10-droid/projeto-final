@@ -107,6 +107,15 @@ Essas imagens foram copiadas dos recursos padrao da biblioteca Arcade:
 - engrenagem: `onscreen_controls/shaded_dark/gear.png`
 - bandeira de extracao: `images/items/flagGreen2.png`
 
+Os sons ficam em `assets/sounds`:
+
+- musica do menu e tela final: `1918.mp3`
+- disparo: `hit1.wav`
+- dano em espinhos e derrota de inimigos: `fall3.wav`
+- explosao: `explosion1.wav`
+- coleta de engrenagem: `coin3.wav`
+- reparo: `upgrade1.wav`
+
 ## O que enviar
 
 Envie a pasta `projeto final` inteira em `.zip`.
